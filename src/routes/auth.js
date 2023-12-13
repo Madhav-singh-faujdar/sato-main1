@@ -88,6 +88,9 @@ router.post('/addId', async (req, res, next) => {
         next(error)
     }
 })
+
+
+
 router.get('/getFile/:ID', async (req, res, next) => {
     try {
         const { ID } = req.params
@@ -165,7 +168,8 @@ router.get('/sato/find/excel/abc=6561dc01f5217930f66f042b/chck/auth/6561dc01f521
 
 router.post('/addBill', async (req, res, next) => {
     try {
-        const { uploadedBill, billNumber, userID } = req.body
+        const { uploadedBill, billNumber, userID,invoiceDate,distributor,
+            invoiceAmount } = req.body
         if (!(uploadedBill && billNumber && userID)) {
             throw new Error('Please fill all the fields')
         }
@@ -176,7 +180,10 @@ router.post('/addBill', async (req, res, next) => {
         }
         const data = await BILL_UPLOAD.create({
             uploadedBill,
-            billNumber, userID
+            billNumber, userID,
+            invoiceDate,
+invoiceAmount,
+distributor
         })
 
 
@@ -203,7 +210,7 @@ router.post('/addBill', async (req, res, next) => {
 router.get('/getBill', async (req, res, next) => {
     try {
 
-        const data = await BILL_UPLOAD.find().populate('userID').exec()
+        const data = await BILL_UPLOAD.find().populate('distributor').exec()
 
         if (!data) {
             throw new Error('Something went wrong!')
@@ -270,6 +277,25 @@ router.get('/getAuthenticUser', async (req, res, next) => {
     } catch (error) {
         next(error)
     }
+})
+
+
+
+
+
+router.get('/self/:ID',async(req,res,next)=>{
+try {
+    const {ID} = req.params
+const user = await User.findById(ID)
+if (!user) {
+    throw new Error('user not found!')
+}
+
+res.status(200).json({error:false,message:"user fetch successfully",data:user})
+
+} catch (error) {
+    next(error)
+}
 })
 
 

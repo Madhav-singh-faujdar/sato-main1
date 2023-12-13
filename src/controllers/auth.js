@@ -1,5 +1,8 @@
 const Users = require("../models/users");
 const OtpModel = require('../models/otpSchema')
+const DEALER_DATA = require('../models/authenticUser')
+const ID_VERIFICATION = require("../models/IDverification");
+
 
 require("dotenv").config();
 const { validationResult } = require("express-validator");
@@ -88,7 +91,7 @@ exports.signup = async (req, res, next) => {
       throw error;
     }
 
-    const { fullName, email, password, phone, countryCode, delearId } = req.body;
+    const { fullName, email, password, phone, countryCode, delearId , pinCode, address,file} = req.body;
     if (!fullName) {
       const error = new Error("Bad request");
       error.statusCode = 400;
@@ -99,9 +102,18 @@ exports.signup = async (req, res, next) => {
       error.statusCode = 400;
       throw error;
     }
+    if (!(pinCode && address)) {
+      const error = new Error("please fill all the fields !");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (!(file)) {
+      const error = new Error("please upload the image !");
+      error.statusCode = 400;
+      throw error;
+    }
 
     const reg = /^[0-9]{10}$/;
-    console.log(typeof phone);
     if (!phone || !reg.test(phone) || typeof phone === 'undefined' || typeof phone === 'string') {
       const error = new Error("Please provide a valid phone number");
       error.statusCode = 400;
@@ -121,7 +133,9 @@ exports.signup = async (req, res, next) => {
         password: hashedPassword,
         phone: Number(phone),
         countryCode: countryCode,
-        delearId
+        delearId,
+        pinCode,
+        address
       });
     } else {
       user = new Users({
@@ -129,7 +143,9 @@ exports.signup = async (req, res, next) => {
         email: email,
         password: hashedPassword,
         phone: Number(phone),
-        delearId
+        delearId,
+        address,
+        pinCode
       });
     }
 
@@ -138,6 +154,27 @@ exports.signup = async (req, res, next) => {
       throw new Error("Something went wrong.");
     }
 
+
+
+
+    const userDetails = await DEALER_DATA.findById(delearId)
+
+    if (!userDetails) {
+        throw new Error('something went wrong!')
+
+    }
+
+
+    const data = await ID_VERIFICATION.create({
+        file,
+        userID: savedUser._id,
+        Dealer: userDetails?.userName
+    })
+
+
+    if (!data) {
+        throw new Error('Something went wrong!')
+    }
 
     function generateOTP() {
       let otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -179,25 +216,24 @@ exports.signup = async (req, res, next) => {
     // --------------------------------send sms with the generated OTP----------------------------------
 
 
+    // const receivers = [
+    //   {
+    //     email: email,
+    //   },
+    // ]
 
-    const receivers = [
-      {
-        email: email,
-      },
-    ]
+    // const sendEMail = await tranEmailApi.sendTransacEmail
+    //   ({
+    //     sender,
+    //     to: receivers,
+    //     subject: 'Otp for verification',
+    //     htmlContent: SendHtml(fullName, OTP)
 
-    const sendEMail = await tranEmailApi.sendTransacEmail
-      ({
-        sender,
-        to: receivers,
-        subject: 'Otp for verification',
-        htmlContent: SendHtml(fullName, OTP)
+    //   });
 
-      });
-
-    if (!sendEMail) {
-      throw new error("Error in mail server");
-    }
+    // if (!sendEMail) {
+    //   throw new error("Error in mail server");
+    // }
 
     res
       .status(201)
@@ -392,10 +428,15 @@ exports.login = async (req, res, next) => {
 
     res.status(200).json({
       message: "Success.",
+      data:{
       accessToken,
       accessTokenExpiresIn: accessTokenMaxage,
       refreshTokenExpiresIn: refreshTokenMaxage,
       userId: userData._id,
+      email,
+      name:userData.fullName
+    
+    }
     });
   } catch (error) {
     next(error);

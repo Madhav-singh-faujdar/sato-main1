@@ -34,7 +34,13 @@ const postSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "authenticUser",
 
-  }
+  },
+
+pinCode:String,
+address:String
+
+
+
 }, { timestamps: true });
 
 module.exports = mongoose.model("users", postSchema);

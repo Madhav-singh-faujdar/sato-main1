@@ -15,7 +15,14 @@ const billData = new Schema({
     userID: {
         type: Schema.Types.ObjectId,
         ref: "users"
-    }
+    },
+    invoiceDate:String,
+invoiceAmount:String,
+distributor: {
+    type: Schema.Types.ObjectId,
+    ref: "authenticUser",
+
+  }
 })
 
 module.exports = mongoose.model("Bill", billData)
